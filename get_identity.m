@@ -32,8 +32,8 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     identityStr = CFStringCreateWithCString(kCFAllocatorDefault, identityName, kCFStringEncodingUTF8);
     if (identityStr == NULL) {
         DLog(@"Could not create identity string");
-	ret = 1;
-	goto cleanup;
+        ret = 1;
+        goto cleanup;
     }
 
     query = [NSMutableDictionary dictionary];
@@ -49,9 +49,9 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&identityRef);
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-	DLog(@"Error copying matching items: %@", (__bridge NSString *)errorRef);
-	ret = 1;
-	goto cleanup;
+        DLog(@"Error copying matching items: %@", (__bridge NSString *)errorRef);
+        ret = 1;
+        goto cleanup;
     }
 
     DLog(@"Identity ref is: %@", identityRef);
@@ -60,9 +60,9 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     status = SecIdentityCopyPrivateKey(identityRef, &keyRef);
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-	DLog(@"Error copying private key: %@", (__bridge NSString *)errorRef);
-	ret = 1;
-	goto cleanup;
+        DLog(@"Error copying private key: %@", (__bridge NSString *)errorRef);
+        ret = 1;
+        goto cleanup;
     }
 
     DLog(@"Key ref is: %@", keyRef);
@@ -88,9 +88,9 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     );
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-	DLog(@"Error exporting private key: %@", (__bridge NSString *)errorRef);
-	ret = 1;
-	goto cleanup;
+        DLog(@"Error exporting private key: %@", (__bridge NSString *)errorRef);
+        ret = 1;
+        goto cleanup;
     }
 
     // All good!  Allocate and copy a buffer.
