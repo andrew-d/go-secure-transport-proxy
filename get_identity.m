@@ -15,14 +15,14 @@
 #endif
 
 
-int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
+int GetIdentityPrivateKey(const char *identityName, const char* password,  uint8_t **out, int *len) {
     int ret = 0;
     OSStatus status;
     CFStringRef identityStr = NULL;
     NSMutableDictionary *query = NULL;
     SecKeychainItemRef identityRef = NULL;
     SecKeyRef keyRef = NULL;
-    CFStringRef dummyPassphrase = CFSTR("dummy");
+    CFDataRef passphraseRef = NULL;
     CFDataRef keyDataRef = NULL;
 
     // Default to empty.
@@ -67,12 +67,19 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
 
     DLog(@"Key ref is: %@", keyRef);
 
+    // Need a CFDataRef for our passphrase.
+    passphraseRef = CFDataCreate(
+        NULL,
+        (unsigned char*)password,
+        strlen(password)
+    );
+
     // Export as PEM
     SecItemImportExportKeyParameters params;
 
     params.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
     params.flags = 0;
-    params.passphrase = dummyPassphrase;
+    params.passphrase = passphraseRef;
     params.alertTitle = NULL;
     params.alertPrompt = NULL;
     params.accessRef = NULL;
@@ -80,11 +87,11 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     params.keyAttributes = NULL;
 
     status = SecItemExport(
-	keyRef,
-	kSecFormatWrappedPKCS8,
-	kSecItemPemArmour,
-	&params,
-	&keyDataRef
+        keyRef,
+        kSecFormatWrappedPKCS8,
+        kSecItemPemArmour,
+        &params,
+        &keyDataRef
     );
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
@@ -103,11 +110,12 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     *len = returnLen;
 
 cleanup:
-    if (keyDataRef != NULL)  CFRelease(keyDataRef);
-    if (keyRef != NULL)      CFRelease(keyRef);
-    if (identityRef != NULL) CFRelease(identityRef);
-    if (query != NULL)       CFRelease(query);
-    if (identityStr != NULL) CFRelease(identityStr);
+    if (keyDataRef != NULL)    CFRelease(keyDataRef);
+    if (passphraseRef != NULL) CFRelease(passphraseRef);
+    if (keyRef != NULL)        CFRelease(keyRef);
+    if (identityRef != NULL)   CFRelease(identityRef);
+    if (query != NULL)         CFRelease(query);
+    if (identityStr != NULL)   CFRelease(identityStr);
 
     return ret;
 }

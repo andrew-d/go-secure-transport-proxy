@@ -6,7 +6,7 @@ package main
 
 #include <stdint.h>
 #include <stdlib.h>
-int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len);
+int GetIdentityPrivateKey(const char *identityName, const char* password, uint8_t **out, int *len);
 */
 import "C"
 
@@ -16,15 +16,18 @@ import (
 	"unsafe"
 )
 
-func GetIdentityEncryptedPrivateKey(name string) (*pem.Block, error) {
-	idName := C.CString("adunham")
-	defer C.free(unsafe.Pointer(idName))
+func GetIdentityEncryptedPrivateKey(name, password string) (*pem.Block, error) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	cPassword := C.CString(password)
+	defer C.free(unsafe.Pointer(cPassword))
 
 	var (
 		data *C.uint8_t
 		size C.int
 	)
-	ret := C.GetIdentityPrivateKey(idName, &data, &size)
+	ret := C.GetIdentityPrivateKey(cName, cPassword, &data, &size)
 	if ret != 0 {
 		return nil, errors.New("could not get private key")
 	}
