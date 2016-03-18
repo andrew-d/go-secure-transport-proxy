@@ -1,6 +1,19 @@
 #import <Foundation/Foundation.h>
 #import <Security/Security.h>
 
+#include <stdint.h>
+#include <string.h>
+
+
+#define DEBUG
+
+
+#ifdef DEBUG
+#   define DLog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#else
+#   define DLog(...)
+#endif
+
 
 int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     int ret = 0;
@@ -18,7 +31,7 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
 
     identityStr = CFStringCreateWithCString(kCFAllocatorDefault, identityName, kCFStringEncodingUTF8);
     if (identityStr == NULL) {
-        NSLog(@"Could not create identity string");
+        DLog(@"Could not create identity string");
 	ret = 1;
 	goto cleanup;
     }
@@ -29,30 +42,30 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     [query setObject:(id)kSecMatchLimitOne forKey:(id)kSecMatchLimit];
     [query setObject:(id)identityStr       forKey:(id)kSecAttrLabel];
 
-    NSLog(@"The query is: %@", query);
+    DLog(@"The query is: %@", query);
 
     // Run the query
     identityRef = NULL;
     status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&identityRef);
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-        NSLog(@"%s: %@", __FUNCTION__, (__bridge NSString *)errorRef);
+	DLog(@"Error copying matching items: %@", (__bridge NSString *)errorRef);
 	ret = 1;
 	goto cleanup;
     }
 
-    NSLog(@"Identity ref is: %@", identityRef);
+    DLog(@"Identity ref is: %@", identityRef);
 
     // Extract private key.
     status = SecIdentityCopyPrivateKey(identityRef, &keyRef);
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-        NSLog(@"%s: %@", __FUNCTION__, (__bridge NSString *)errorRef);
+	DLog(@"Error copying private key: %@", (__bridge NSString *)errorRef);
 	ret = 1;
 	goto cleanup;
     }
 
-    NSLog(@"Key ref is: %@", keyRef);
+    DLog(@"Key ref is: %@", keyRef);
 
     // Export as PEM
     SecItemImportExportKeyParameters params;
@@ -75,7 +88,7 @@ int GetIdentityPrivateKey(const char *identityName,  uint8_t **out, int *len) {
     );
     if (status != errSecSuccess) {
         CFStringRef errorRef = SecCopyErrorMessageString(status, NULL);
-        NSLog(@"%s: %@", __FUNCTION__, (__bridge NSString *)errorRef);
+	DLog(@"Error exporting private key: %@", (__bridge NSString *)errorRef);
 	ret = 1;
 	goto cleanup;
     }
