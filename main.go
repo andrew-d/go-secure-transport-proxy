@@ -9,17 +9,18 @@ func main() {
 
 	password := randomHex(32)
 
-	enc, err := GetIdentityEncryptedPrivateKey("adunham", password)
+	cert, encPkey, err := GetIdentity("adunham", password)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dec, err := DecryptEncryptedPEM(enc, password)
+	decPkey, err := DecryptEncryptedPEM(encPkey, password)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("%+v", dec)
+	log.Print(PEMToString(cert))
+	log.Print(PEMToString(decPkey))
 
 	log.Println("Finished")
 }

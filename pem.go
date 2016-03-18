@@ -51,3 +51,7 @@ func DecryptEncryptedPEM(b *pem.Block, password string) (*pem.Block, error) {
 
 	return ret, nil
 }
+
+func PEMToString(b *pem.Block) string {
+	return string(pem.EncodeToMemory(b))
+}

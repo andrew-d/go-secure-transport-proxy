@@ -1,12 +1,16 @@
 package main
 
 /*
-#cgo CFLAGS: -x objective-c
+#cgo CFLAGS: -x objective-c -Wall -Wextra
 #cgo LDFLAGS: -framework Security -framework Foundation
 
 #include <stdint.h>
 #include <stdlib.h>
-int GetIdentityPrivateKey(const char *identityName, const char* password, uint8_t **out, int *len);
+int ExportIdentity(
+    const char *identityName, const char* password,
+    uint8_t **certificateOut, int *certificateLen,
+    uint8_t **privateKeyOut, int *privateKeyLen
+);
 */
 import "C"
 
@@ -16,7 +20,7 @@ import (
 	"unsafe"
 )
 
-func GetIdentityEncryptedPrivateKey(name, password string) (*pem.Block, error) {
+func GetIdentity(name, password string) (*pem.Block, *pem.Block, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
@@ -24,21 +28,28 @@ func GetIdentityEncryptedPrivateKey(name, password string) (*pem.Block, error) {
 	defer C.free(unsafe.Pointer(cPassword))
 
 	var (
-		data *C.uint8_t
-		size C.int
+		certData, privateKeyData *C.uint8_t
+		certSize, privateKeySize C.int
 	)
-	ret := C.GetIdentityPrivateKey(cName, cPassword, &data, &size)
+	ret := C.ExportIdentity(cName, cPassword, &certData, &certSize, &privateKeyData, &privateKeySize)
 	if ret != 0 {
-		return nil, errors.New("could not get private key")
+		return nil, nil, errors.New("could not get private key")
 	}
-	defer C.free(unsafe.Pointer(data))
+	defer C.free(unsafe.Pointer(certData))
+	defer C.free(unsafe.Pointer(privateKeyData))
 
-	d := C.GoBytes(unsafe.Pointer(data), size)
+	cert := C.GoBytes(unsafe.Pointer(certData), certSize)
+	pkey := C.GoBytes(unsafe.Pointer(privateKeyData), privateKeySize)
 
-	block, _ := pem.Decode(d)
-	if block == nil {
-		return nil, errors.New("could not load PEM block")
+	certBlock, _ := pem.Decode(cert)
+	if certBlock == nil {
+		return nil, nil, errors.New("could not load PEM cert block")
 	}
 
-	return block, nil
+	privateKeyBlock, _ := pem.Decode(pkey)
+	if privateKeyBlock == nil {
+		return nil, nil, errors.New("could not load PEM private key block")
+	}
+
+	return certBlock, privateKeyBlock, nil
 }
