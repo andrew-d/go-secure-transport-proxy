@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -54,4 +55,11 @@ func DecryptEncryptedPEM(b *pem.Block, password string) (*pem.Block, error) {
 
 func PEMToString(b *pem.Block) string {
 	return string(pem.EncodeToMemory(b))
+}
+
+func CertificateFromPEM(cert, key *pem.Block) (tls.Certificate, error) {
+	return tls.X509KeyPair(
+		pem.EncodeToMemory(cert),
+		pem.EncodeToMemory(key),
+	)
 }
