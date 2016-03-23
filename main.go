@@ -97,7 +97,7 @@ func main() {
 
 func getTLSClientCert(identity string) (*tls.Certificate, error) {
 	password := randomHex(32)
-	cert, encPkey, err := GetIdentity("adunham", password)
+	cert, encPkey, err := GetIdentity(identity, password)
 	if err != nil {
 		return nil, err
 	}
