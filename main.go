@@ -57,20 +57,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	password := randomHex(32)
-	cert, encPkey, err := GetIdentity("adunham", password)
-	if err != nil {
-		log.Fatal(err)
-	}
-	decPkey, err := DecryptEncryptedPEM(encPkey, password)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// log.Print(PEMToString(cert))
-	// log.Print(PEMToString(decPkey))
-
-	clientCert, err := CertificateFromPEM(cert, decPkey)
+	clientCert, err := getTLSClientCert(argIdentity)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,13 +84,38 @@ func main() {
 		log.Printf("accepted connection from: %s", conn.RemoteAddr())
 
 		go func() {
-			if err := handleConnection(conn, argUpstreamAddr, clientCert); err != nil {
+			if err := handleConnection(conn, argUpstreamAddr, *clientCert); err != nil {
 				log.Printf("error proxying to %q: %s", conn.RemoteAddr(), err)
 			}
+
+			log.Printf("finished proxying to %q", conn.RemoteAddr())
 		}()
 	}
 
 	log.Println("finished")
+}
+
+func getTLSClientCert(identity string) (*tls.Certificate, error) {
+	password := randomHex(32)
+	cert, encPkey, err := GetIdentity("adunham", password)
+	if err != nil {
+		return nil, err
+	}
+	decPkey, err := DecryptEncryptedPEM(encPkey, password)
+	if err != nil {
+		return nil, err
+	}
+
+	// log.Print(PEMToString(cert))
+	// log.Print(PEMToString(decPkey))
+
+	clientCert, err := CertificateFromPEM(cert, decPkey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clientCert, nil
+
 }
 
 func handleConnection(conn net.Conn, addr string, clientCert tls.Certificate) error {
