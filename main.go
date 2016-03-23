@@ -125,8 +125,8 @@ func handleConnection(conn net.Conn, addr string, clientCert tls.Certificate) er
 	}
 
 	// Copy everything
-	go io.Copy(conn, upstream)
-	io.Copy(upstream, conn)
+	go io.Copy(upstream, conn)
+	io.Copy(conn, upstream)
 
 	return nil
 }
